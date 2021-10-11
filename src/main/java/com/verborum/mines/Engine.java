@@ -18,6 +18,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
+//TODO: Вынести в отдельный класс минное поле, в нём же прописать проверку на победу и поражение.
 public class Engine {
     private int size = 10;
     private long window;
@@ -102,12 +103,11 @@ public class Engine {
         glfwSetCursorPosCallback(window, posCallback = GLFWCursorPosCallback.create((window, xpos, ypos) -> {
                 posX = (int) (xpos / (this.windowWidth / this.size));
                 posY = (int) ((this.windowHeight - ypos) / (this.windowHeight / this.size));
-                System.out.println(posX + " - " + posY + " || " + this.indexByMousePos());
         }));
 
         glfwSetMouseButtonCallback(window, mouseCallback = GLFWMouseButtonCallback.create((window, button, action, mods) -> {
             if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE) {
-                this.openField(this.indexByMousePos());
+                this.openFieldsFrom(this.indexByMousePos());
             } else if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE) {
                 this.flagField(this.indexByMousePos());
             }
@@ -117,42 +117,55 @@ public class Engine {
         glfwSwapInterval(1);
 
         glfwShowWindow(window);
+
+        this.generateFields();
     }
 
     private int indexByMousePos() {
         return this.posX * this.size + this.posY;
     }
 
-    private int indexByCoor(int x, int y) {
-        return x * this.size + y;
+    private ArrayList<Integer> getCorrectFieldIndex(int index) {
+        int x = index / this.size;
+        int y = index % this.size;
+        ArrayList<Integer> resultList = new ArrayList<>();
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if ( (i == 0) && (j == 0) ) {
+                    continue;
+                }
+                if ( (x + i >= 0) && (x + i < this.size) && (y + j >= 0) && (y + j < this.size) ) {
+                    resultList.add((x + i) * this.size + y + j);
+                }
+            }
+        }
+        return resultList;
     }
 
-    private void openField(int index) {
-        this.fieldsList.get(index).setOpened(true);
-        this.fieldsList.get(index).setFlag(false);
+    private void openFieldsFrom(int index) {
+        if (this.fieldsList.get(index).isOpened()) {
+            return;
+        }
+        this.openField(index);
         if (this.fieldsList.get(index).getMinesCount() == 0) {
-            for (int i = -10; i <= 10; i = i + 10){
-                for (int j = -1; j <= 1; j++){
-                    if ((i == 0) && (j == 0))
-                        continue;
-                    try {
-                        if (!this.fieldsList.get(index + i + j).isOpened()) {
-                            if (this.fieldsList.get(index + i + j).getMinesCount() == 0 ) {
-                                this.openField(index + i + j);
-                            } else {
-                                this.fieldsList.get(index + i + j).setOpened(true);
-                                this.fieldsList.get(index + i + j).setFlag(false);
-                            }
-                        }
-                    } catch (Exception ignored){}
+            for (int openIndex : this.getCorrectFieldIndex(index)) {
+                if (this.fieldsList.get(openIndex).getMinesCount() == 0) {
+                    this.openFieldsFrom(openIndex);
+                } else {
+                    this.openField(openIndex);
                 }
             }
         }
     }
 
+    private void openField(int index) {
+        this.fieldsList.get(index).setOpened(true);
+        this.fieldsList.get(index).setFlag(false);
+    }
+
     private void flagField(int index) {
         if (!this.fieldsList.get(index).isOpened()) {
-            this.fieldsList.get(index).setFlag(true);
+            this.fieldsList.get(index).setFlag(!this.fieldsList.get(index).isFlag());
         }
     }
 
@@ -179,7 +192,7 @@ public class Engine {
 
         for (int x = 0; x < this.size; x++) {
             for (int y = 0; y < this.size; y++) {
-                minesArray[x][y] = rand.nextInt(this.upperbound) < (this.upperbound / 5);
+                minesArray[x][y] = rand.nextInt(this.upperbound) < (this.upperbound / 6);
             }
         }
 
@@ -194,8 +207,6 @@ public class Engine {
         GL.createCapabilities();
         GL11.glClearColor(0.7f, 1.0f, 0.7f, 0.0f);
         GL11.glTranslatef(-1.0f, -1.0f, 0.0f);
-
-        this.generateFields();
 
         while ( !glfwWindowShouldClose(window) ) {
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
