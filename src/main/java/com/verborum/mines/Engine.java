@@ -158,9 +158,19 @@ public class Engine {
         }
     }
 
+    private void gameOver() {
+        for (Field field : fieldsList) {
+            field.setOpened(true);
+            field.setFlag(false);
+        }
+    }
+
     private void openField(int index) {
         this.fieldsList.get(index).setOpened(true);
         this.fieldsList.get(index).setFlag(false);
+        if (this.fieldsList.get(index).isMine()) {
+            this.gameOver();
+        }
     }
 
     private void flagField(int index) {

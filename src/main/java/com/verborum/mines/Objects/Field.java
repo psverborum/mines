@@ -100,6 +100,10 @@ public class Field {
         this.isFlag = flag;
     }
 
+    public boolean isMine() {
+        return this.isMine;
+    }
+
     private void drawNum() {
         GL11.glPointSize((30.0f * this.size) * 2.0f);
         GL11.glBegin(GL11.GL_POINTS);
