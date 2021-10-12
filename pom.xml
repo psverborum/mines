@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>14</maven.compiler.source>
         <maven.compiler.target>14</maven.compiler.target>
-        <lwjgl.version>3.1.5</lwjgl.version>
+        <lwjgl.version>3.2.3</lwjgl.version>
     </properties>
 
     <profiles>
