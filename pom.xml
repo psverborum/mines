@@ -101,7 +101,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.verborum.mines.Main</mainClass>
+                                    <mainClass>Main</mainClass>
                                 </transformer>
                             </transformers>
                             <finalName>mines-1.0.0</finalName>

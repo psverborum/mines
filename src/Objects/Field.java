@@ -1,4 +1,4 @@
-package com.verborum.mines.Objects;
+package Objects;
 
 import org.lwjgl.opengl.GL11;
 
