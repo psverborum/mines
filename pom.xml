@@ -53,60 +53,31 @@
                 <lwjgl.natives>natives-windows</lwjgl.natives>
             </properties>
         </profile>
-        <profile>
-            <id>lwjgl-natives-windows-x86</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>x86</arch>
-                </os>
-            </activation>
-            <properties>
-                <lwjgl.natives>natives-windows-x86</lwjgl.natives>
-            </properties>
-        </profile>
     </profiles>
 
     <build>
-        <sourceDirectory>src</sourceDirectory>
-        <resources>
-            <resource>
-                <directory>res</directory>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>14</source>
+                    <target>14</target>
+                </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>Main</mainClass>
-                                </transformer>
-                            </transformers>
-                            <finalName>mines-1.0.0</finalName>
-                        </configuration>
-                    </execution>
-                </executions>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.verborum.mines.Main</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

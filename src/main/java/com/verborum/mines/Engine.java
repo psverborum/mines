@@ -1,4 +1,6 @@
-import Objects.Field;
+package com.verborum.mines;
+
+import com.verborum.mines.Objects.Field;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
