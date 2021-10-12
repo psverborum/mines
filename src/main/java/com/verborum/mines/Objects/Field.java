@@ -26,7 +26,6 @@ public class Field {
     }
 
     public void draw() {
-        this.freeCount = 0;
         for (Cell cell : this.fieldsList) {
             cell.draw(this.unhideMines);
         }
