@@ -2,147 +2,158 @@ package com.verborum.mines.Objects;
 
 import org.lwjgl.opengl.GL11;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 public class Field {
-    private final int x;
-    private final int y;
-    private final int minesCount;
-    private final float size;
-    private final boolean isMine;
+    private final ArrayList<Cell> fieldsList;
+    private final int size;
+    private final int upperbound;
+    private final Random rand;
+    private boolean unhideMines;
+    private int freeCount;
 
-    private boolean isOpened;
-    private boolean isFlag;
+    private float rotate;
 
-    public Field(int x, int y, int minesCount, boolean isMine, int size) {
-        this.x          = x;
-        this.y          = y;
-        this.isMine     = isMine;
-        this.minesCount = minesCount;
-        this.size       = 2.0f / (float) size;
+    public Field(int size, int upperbound) {
+        this.fieldsList  = new ArrayList<>();
+        this.rand        = new Random();
+        this.upperbound  = upperbound;
+        this.size        = size;
+        this.unhideMines = false;
+        this.freeCount   = 0;
+        this.rotate      = 0.0f;
     }
 
-    public void draw(boolean unhideMines) {
-        if (unhideMines || this.isOpened) {
-            if (this.isMine) {
-                GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
-                    GL11.glColor3f(0.7f, 0.0f, 0.0f);
-                    GL11.glVertex2f(0.0f + (this.x * this.size), this.size + (this.y * this.size));
-                    GL11.glColor3f(0.6f, 0.0f, 0.0f);
-                    GL11.glVertex2f(this.size + (this.x * this.size), this.size + (this.y * this.size));
-                    GL11.glVertex2f(0.0f + (this.x * this.size), 0.0f + (this.y * this.size));
-                    GL11.glColor3f(0.5f, 0.0f, 0.0f);
-                    GL11.glVertex2f(this.size + (this.x * this.size), 0.0f + (this.y * this.size));
-                GL11.glEnd();
-            } else {
-                if (this.minesCount == 0) {
-                    GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
-                        GL11.glColor3f(0.5f, 1.0f, 0.0f);
-                        GL11.glVertex2f(0.0f + (this.x * this.size), this.size + (this.y * this.size));
-                        GL11.glColor3f(0.4f, 0.9f, 0.0f);
-                        GL11.glVertex2f(this.size + (this.x * this.size), this.size + (this.y * this.size));
-                        GL11.glVertex2f(0.0f + (this.x * this.size), 0.0f + (this.y * this.size));
-                        GL11.glColor3f(0.3f, 0.8f, 0.0f);
-                        GL11.glVertex2f(this.size + (this.x * this.size), 0.0f + (this.y * this.size));
-                    GL11.glEnd();
-                } else {
-                    GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
-                        GL11.glColor3f(0.3f, 0.7f, 0.0f);
-                        GL11.glVertex2f(0.0f + (this.x * this.size), this.size + (this.y * this.size));
-                        GL11.glColor3f(0.2f, 0.6f, 0.0f);
-                        GL11.glVertex2f(this.size + (this.x * this.size), this.size + (this.y * this.size));
-                        GL11.glVertex2f(0.0f + (this.x * this.size), 0.0f + (this.y * this.size));
-                        GL11.glColor3f(0.1f, 0.5f, 0.0f);
-                        GL11.glVertex2f(this.size + (this.x * this.size), 0.0f + (this.y * this.size));
-                    GL11.glEnd();
-                    this.drawNum();
+    public void draw() {
+        this.freeCount = 0;
+        for (Cell cell : this.fieldsList) {
+            cell.draw(this.unhideMines);
+        }
+        if (this.freeCount == 0) {
+            this.win();
+        }
+    }
+
+    public void generateFields() {
+        this.fieldsList.clear();
+
+        boolean[][] minesArray = new boolean[this.size][this.size];
+
+        for (int x = 0; x < this.size; x++) {
+            for (int y = 0; y < this.size; y++) {
+                minesArray[x][y] = rand.nextInt(this.upperbound) < (this.upperbound / 6);
+                if (!minesArray[x][y]) {
+                    this.freeCount++;
                 }
             }
+        }
+
+        for (int x = 0; x < this.size; x++) {
+            for (int y = 0; y < this.size; y++) {
+                this.fieldsList.add(new Cell(x, y, this.countMines(x, y, minesArray), minesArray[x][y], this.size));
+            }
+        }
+    }
+
+    public void openFieldsFrom(int index) {
+        if (this.fieldsList.get(index).isOpened()) {
+            return;
+        }
+        this.openField(index);
+        if (this.fieldsList.get(index).getMinesCount() == 0) {
+            for (int openIndex : this.getCorrectFieldIndex(index)) {
+                if (this.fieldsList.get(openIndex).getMinesCount() == 0) {
+                    this.openFieldsFrom(openIndex);
+                } else {
+                    if (!this.fieldsList.get(openIndex).isOpened()) {
+                        this.openField(openIndex);
+                    }
+                }
+            }
+        }
+    }
+
+    public void flagField(int index) {
+        if (!this.fieldsList.get(index).isOpened()) {
+            this.fieldsList.get(index).setFlag(!this.fieldsList.get(index).isFlag());
+        }
+    }
+
+    public void invertUnhideMines() {
+        this.unhideMines = !this.unhideMines;
+    }
+
+    private void openField(int index) {
+        this.fieldsList.get(index).setOpened(true);
+        this.fieldsList.get(index).setFlag(false);
+        if (this.fieldsList.get(index).isMine()) {
+            this.gameOver();
         } else {
-            GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
-                GL11.glColor3f(0.9f, 0.9f, 0.9f);
-                GL11.glVertex2f(0.0f + (this.x * this.size), this.size + (this.y * this.size));
-                GL11.glColor3f(0.8f, 0.8f, 0.8f);
-                GL11.glVertex2f(this.size + (this.x * this.size), this.size + (this.y * this.size));
-                GL11.glVertex2f(0.0f + (this.x * this.size), 0.0f + (this.y * this.size));
-                GL11.glColor3f(0.7f, 0.7f, 0.7f);
-                GL11.glVertex2f(this.size + (this.x * this.size), 0.0f + (this.y * this.size));
-            GL11.glEnd();
-        }
-        if (this.isFlag) {
-            GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
-            GL11.glColor3f(0.5f, 0.0f, 1.0f);
-            GL11.glVertex2f(0.0f + (this.x * this.size), this.size + (this.y * this.size));
-            GL11.glColor3f(0.4f, 0.0f, 0.9f);
-            GL11.glVertex2f(this.size + (this.x * this.size), this.size + (this.y * this.size));
-            GL11.glVertex2f(0.0f + (this.x * this.size), 0.0f + (this.y * this.size));
-            GL11.glColor3f(0.3f, 0.0f, 0.8f);
-            GL11.glVertex2f(this.size + (this.x * this.size), 0.0f + (this.y * this.size));
-            GL11.glEnd();
+            this.freeCount--;
         }
     }
 
-    public int getMinesCount() {
-        return this.minesCount;
-    }
-
-    public boolean isOpened() {
-        return this.isOpened;
-    }
-
-    public void setOpened(boolean opened) {
-        this.isOpened = opened;
-    }
-
-    public boolean isFlag() {
-        return this.isFlag;
-    }
-
-    public void setFlag(boolean flag) {
-        this.isFlag = flag;
-    }
-
-    public boolean isMine() {
-        return this.isMine;
-    }
-
-    private void drawNum() {
-        GL11.glPointSize((30.0f * this.size) * 2.0f);
-        GL11.glBegin(GL11.GL_POINTS);
-        GL11.glColor3f(0.0f, 0.0f, 0.0f);
-        switch (this.minesCount) {
-            case 1 -> {
-                GL11.glVertex2f(this.size / 2.0f + (this.x * this.size), this.size / 2.0f + (this.y * this.size));
-            }
-            case 2 -> {
-                GL11.glVertex2f(this.size / 4.0f + (this.x * this.size), this.size / 2.0f + (this.y * this.size));
-                GL11.glVertex2f((this.size * 3.0f) / 4.0f + (this.x * this.size), this.size / 2.0f + (this.y * this.size));
-            }
-            case 3 -> {
-                GL11.glVertex2f((this.size * 3.0f) / 4.0f + (this.x * this.size), this.size / 4.0f + (this.y * this.size));
-                GL11.glVertex2f(this.size / 4.0f + (this.x * this.size), (this.size * 3.0f) / 4.0f + (this.y * this.size));
-                GL11.glVertex2f(this.size / 2.0f + (this.x * this.size), this.size / 2.0f + (this.y * this.size));
-            }
-            case 4 -> {
-                GL11.glVertex2f(this.size / 4.0f + (this.x * this.size), this.size / 4.0f + (this.y * this.size));
-                GL11.glVertex2f((this.size * 3.0f) / 4.0f + (this.x * this.size), this.size / 4.0f + (this.y * this.size));
-                GL11.glVertex2f(this.size / 4.0f + (this.x * this.size), (this.size * 3.0f) / 4.0f + (this.y * this.size));
-                GL11.glVertex2f((this.size * 3.0f) / 4.0f + (this.x * this.size), (this.size * 3.0f) / 4.0f + (this.y * this.size));
-            }
-            case 5 -> {
-                GL11.glVertex2f(this.size / 4.0f + (this.x * this.size), this.size / 4.0f + (this.y * this.size));
-                GL11.glVertex2f((this.size * 3.0f) / 4.0f + (this.x * this.size), this.size / 4.0f + (this.y * this.size));
-                GL11.glVertex2f(this.size / 4.0f + (this.x * this.size), (this.size * 3.0f) / 4.0f + (this.y * this.size));
-                GL11.glVertex2f((this.size * 3.0f) / 4.0f + (this.x * this.size), (this.size * 3.0f) / 4.0f + (this.y * this.size));
-                GL11.glVertex2f(this.size / 2.0f + (this.x * this.size), this.size / 2.0f + (this.y * this.size));
-            }
-            case 6 -> {
-                GL11.glVertex2f(this.size / 4.0f + (this.x * this.size), this.size / 4.0f + (this.y * this.size));
-                GL11.glVertex2f((this.size * 3.0f) / 4.0f + (this.x * this.size), this.size / 4.0f + (this.y * this.size));
-                GL11.glVertex2f(this.size / 4.0f + (this.x * this.size), (this.size * 3.0f) / 4.0f + (this.y * this.size));
-                GL11.glVertex2f((this.size * 3.0f) / 4.0f + (this.x * this.size), (this.size * 3.0f) / 4.0f + (this.y * this.size));
-                GL11.glVertex2f(this.size / 2.0f + (this.x * this.size), (this.size * 3.0f) / 4.0f + (this.y * this.size));
-                GL11.glVertex2f(this.size / 2.0f + (this.x * this.size), this.size / 4.0f + (this.y * this.size));
+    private ArrayList<Integer> getCorrectFieldIndex(int index) {
+        int x = index / this.size;
+        int y = index % this.size;
+        ArrayList<Integer> resultList = new ArrayList<>();
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if ( (i == 0) && (j == 0) ) {
+                    continue;
+                }
+                if ( (x + i >= 0) && (x + i < this.size) && (y + j >= 0) && (y + j < this.size) ) {
+                    resultList.add((x + i) * this.size + y + j);
+                }
             }
         }
+        return resultList;
+    }
+
+    private void gameOver() {
+        for (Cell cell : fieldsList) {
+            cell.setOpened(true);
+            cell.setFlag(false);
+        }
+    }
+
+    private void win() {
+        for (Cell cell : fieldsList) {
+            cell.setOpened(true);
+            cell.setFlag(false);
+        }
+        this.drawWin();
+    }
+
+    private void drawWin() {
+        GL11.glBegin(GL11.GL_POLYGON);
+        GL11.glColor3f(0.9f, 0.3f, 0.3f);
+        GL11.glVertex3f(1.0f, 1.33333f, 0.0f);
+        GL11.glVertex3f(0.83333f, 1.5f, 0.0f);
+        GL11.glColor3f(0.9f, 0.03f, 0.05f);
+        GL11.glVertex3f(0.5f, 1.5f, 0.0f);
+        GL11.glVertex3f(0.5f, 1.0f, 0.0f);
+        GL11.glVertex3f(1.0f, 0.5f, 0.0f);
+        GL11.glVertex3f(1.5f, 1.0f, 0.0f);
+        GL11.glVertex3f(1.5f, 1.5f, 0.0f);
+        GL11.glVertex3f(1.16666f, 1.5f, 0.0f);
         GL11.glEnd();
+    }
+
+    private int countMines(int x, int y, boolean[][] minesArray) {
+        int result = 0;
+        for (int i = x - 1; i <= x + 1; i++){
+            for (int j = y - 1; j <= y + 1; j++){
+                if ((i == x) && (j == y))
+                    continue;
+                try {
+                    if (minesArray[i][j]) {
+                        result++;
+                    }
+                } catch (Exception ignored){}
+            }
+        }
+        return result;
     }
 }
