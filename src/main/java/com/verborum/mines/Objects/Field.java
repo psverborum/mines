@@ -13,8 +13,6 @@ public class Field {
     private boolean unhideMines;
     private int freeCount;
 
-    private float rotate;
-
     public Field(int size, int upperbound) {
         this.fieldsList  = new ArrayList<>();
         this.rand        = new Random();
@@ -22,7 +20,6 @@ public class Field {
         this.size        = size;
         this.unhideMines = false;
         this.freeCount   = 0;
-        this.rotate      = 0.0f;
     }
 
     public void draw() {
