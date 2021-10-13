@@ -31,7 +31,7 @@ public class Field {
         }
     }
 
-    public void generateFields() {
+    public void generateField() {
         this.fieldsList.clear();
 
         boolean[][] minesArray = new boolean[this.size][this.size];
@@ -52,19 +52,33 @@ public class Field {
         }
     }
 
-    public void openFieldsFrom(int index) {
+    public void openCellsFrom(int index) {
         if (this.fieldsList.get(index).isOpened()) {
             return;
         }
-        this.openField(index);
+        this.openCell(index);
         if (this.fieldsList.get(index).getMinesCount() == 0) {
             for (int openIndex : this.getCorrectFieldIndex(index)) {
                 if (this.fieldsList.get(openIndex).getMinesCount() == 0) {
-                    this.openFieldsFrom(openIndex);
+                    this.openCellsFrom(openIndex);
                 } else {
                     if (!this.fieldsList.get(openIndex).isOpened()) {
-                        this.openField(openIndex);
+                        this.openCell(openIndex);
                     }
+                }
+            }
+        }
+    }
+
+    public void openNeighbourCells(int index) {
+        if (!this.fieldsList.get(index).isOpened()) {
+            this.openCellsFrom(index);
+        } else {
+            for (int openIndex : this.getCorrectFieldIndex(index)) {
+                if (this.fieldsList.get(openIndex).getMinesCount() == 0 && !this.fieldsList.get(openIndex).isMine()){
+                    this.openCellsFrom(openIndex);
+                } else {
+                    this.openCell(openIndex);
                 }
             }
         }
@@ -80,9 +94,11 @@ public class Field {
         this.unhideMines = !this.unhideMines;
     }
 
-    private void openField(int index) {
+    private void openCell(int index) {
+        if (this.fieldsList.get(index).isFlag()) {
+            return;
+        }
         this.fieldsList.get(index).setOpened(true);
-        this.fieldsList.get(index).setFlag(false);
         if (this.fieldsList.get(index).isMine()) {
             this.gameOver();
         } else {

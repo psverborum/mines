@@ -95,9 +95,11 @@ public class Engine {
 
         glfwSetMouseButtonCallback(window, (window, button, action, mods) -> {
             if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE) {
-                this.field.openFieldsFrom(this.indexByMousePos());
+                this.field.openCellsFrom(this.indexByMousePos());
             } else if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE) {
                 this.field.flagField(this.indexByMousePos());
+            } else if (button == GLFW_MOUSE_BUTTON_3 && action == GLFW_RELEASE) {
+                this.field.openNeighbourCells(this.indexByMousePos());
             }
         });
 
@@ -111,7 +113,7 @@ public class Engine {
 
     private void generateFields() {
         this.field = new Field(this.size, this.upperbound);
-        this.field.generateFields();
+        this.field.generateField();
     }
 
     private int indexByMousePos() {
